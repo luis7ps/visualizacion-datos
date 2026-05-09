@@ -1,0 +1,44 @@
+#scrolly {
+  display: flex;
+  gap: 2rem;
+  position: relative;
+}
+
+#sticky-chart {
+  position: sticky;
+  top: 80px;
+  width: 60%;
+  height: 480px;
+  align-self: flex-start;
+}
+
+#chart-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+#chart-subtitle {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+#steps {
+  width: 40%;
+}
+
+.step {
+  padding: 2rem 1.5rem;
+  margin-bottom: 60vh;
+  background: #f8f8f8;
+  border-left: 3px solid #ccc;
+  border-radius: 4px;
+  opacity: 0.4;
+  transition: opacity 0.4s;
+}
+
+.step.is-active {
+  opacity: 1;
+  border-left-color: #185FA5;
+}

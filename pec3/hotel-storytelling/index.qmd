@@ -1,0 +1,279 @@
+---
+title: "¿Cómo varían las reservas de hotel según el perfil del turista?"
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: false
+    embed-resources: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+library(dplyr)
+library(jsonlite)
+
+x <- read.csv("datasets/hotel_bookings_v2.csv", stringsAsFactors = TRUE)
+```
+
+```{r export-data, include=FALSE}
+# Gráfico 1: perfil por tipo de hotel
+g1 <- x |>
+  count(profile, hotel) |>
+  group_by(profile) |>
+  mutate(prop = n / sum(n)) |>
+  toJSON()
+
+# Gráfico 2: ADR por perfil (datos resumidos para violin)
+g2 <- x |>
+  select(profile, adr) |>
+  filter(adr < 500) |>  # quitar outliers extremos
+  toJSON()
+
+# Gráfico 3: cancelaciones por perfil
+g3 <- x |>
+  count(profile, is_canceled) |>
+  group_by(profile) |>
+  mutate(prop = n / sum(n)) |>
+  toJSON()
+
+# Gráfico 4: perfil por mes
+months_order <- c("January","February","March","April","May","June",
+                  "July","August","September","October","November","December")
+g4 <- x |>
+  mutate(arrival_date_month = factor(arrival_date_month, levels = months_order)) |>
+  count(arrival_date_month, profile) |>
+  group_by(arrival_date_month) |>
+  mutate(prop = n / sum(n)) |>
+  toJSON()
+```
+
+<!-- Inyectar datos como variables JS globales -->
+```{r inject-data, results='asis', echo=FALSE}
+cat(paste0("<script>
+  const data_hotel   = ", g1, ";
+  const data_adr     = ", g2, ";
+  const data_cancel  = ", g3, ";
+  const data_month   = ", g4, ";
+</script>"))
+```
+
+```{=html}
+<!-- Scrollytelling container -->
+
+<div id="scrolly">
+
+  <div id="sticky-chart">
+    <!-- El gráfico se queda fijo mientras scrolleas -->
+    <div id="chart-title"></div>
+    <div id="chart-subtitle"></div>
+    <svg id="main-chart" width="600" height="400"></svg>
+  </div>
+
+  <div id="steps">
+    <div class="step" data-step="0">
+      <p><strong>¿Quiénes se hospedan en hoteles de ciudad vs resort?</strong>
+      Los turistas de ocio dominan los resorts, mientras que los de negocios 
+      prefieren los hoteles urbanos.</p>
+    </div>
+    <div class="step" data-step="1">
+      <p><strong>¿Cuánto pagan según su perfil?</strong>
+      El precio medio diario (ADR) varía notablemente: 
+      los turistas de ocio muestran mayor dispersión en el gasto.</p>
+    </div>
+    <div class="step" data-step="2">
+      <p><strong>¿Quién cancela más?</strong>
+      Las cancelaciones no se distribuyen igual entre perfiles: 
+      algunos cancelan casi el doble que otros.</p>
+    </div>
+    <div class="step" data-step="3">
+      <p><strong>¿Hay estacionalidad por perfil?</strong>
+      Verano concentra el turismo de ocio; 
+      el de negocios se mantiene más estable todo el año.</p>
+    </div>
+  </div>
+
+</div>
+```
+
+
+```{=html}
+<script src="https://cdn.jsdelivr.net/npm/scrollama@3.2.0/build/scrollama.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script>
+// ── Configuración scrollama ──────────────────────────────
+const scroller = scrollama();
+
+scroller
+  .setup({
+    step: ".step",
+    offset: 0.5,
+    debug: false
+  })
+  .onStepEnter(({ index }) => {
+    document.querySelectorAll(".step")
+      .forEach(s => s.classList.remove("is-active"));
+    document.querySelectorAll(".step")[index].classList.add("is-active");
+    drawChart(index);
+  });
+
+window.addEventListener("resize", scroller.resize);
+
+// ── Lógica de gráficos con D3 ────────────────────────────
+function drawChart(step) {
+  const svg = d3.select("#main-chart");
+  svg.selectAll("*").remove();
+  const W = 600, H = 400;
+  const margin = { top: 20, right: 30, bottom: 60, left: 60 };
+  const w = W - margin.left - margin.right;
+  const h = H - margin.top - margin.bottom;
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const titles = [
+    ["Tipo de hotel por perfil", "Proporción de reservas en City Hotel vs Resort Hotel"],
+    ["Precio medio diario (ADR)", "Distribución del gasto por perfil de turista"],
+    ["Tasa de cancelación", "Proporción de cancelaciones por perfil"],
+    ["Estacionalidad", "Perfil de turista por mes del año"]
+  ];
+  document.getElementById("chart-title").textContent    = titles[step][0];
+  document.getElementById("chart-subtitle").textContent = titles[step][1];
+
+  if (step === 0) drawHotelType(g, w, h);
+  if (step === 1) drawADR(g, w, h);
+  if (step === 2) drawCancels(g, w, h);
+  if (step === 3) drawMonths(g, w, h);
+}
+
+const color = d3.scaleOrdinal()
+  .domain(["Single", "Couple", "Family", "Group"])
+  .range(["#185FA5", "#1D9E75", "#D85A30", "#F2C14E"]);
+
+// Gráfico 1: barras apiladas hotel
+function drawHotelType(g, w, h) {
+  const profiles = [...new Set(data_hotel.map(d => d.profile))];
+  const hotels   = [...new Set(data_hotel.map(d => d.hotel))];
+
+  const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
+  const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
+  const stack = d3.stack().keys(hotels)
+    .value((d, key) => {
+      const found = data_hotel.find(r => r.profile === d && r.hotel === key);
+      return found ? found.prop : 0;
+    });
+
+  const series = stack(profiles.map(p => ({ profile: p })));
+
+  g.selectAll("g.serie")
+    .data(series)
+    .join("g")
+    .attr("fill", d => color(d.key))
+    .selectAll("rect")
+    .data(d => d)
+    .join("rect")
+    .attr("x", d => x(d.data.profile))
+    .attr("width", x.bandwidth())
+    .attr("y", d => y(d[1]))
+    .attr("height", d => y(d[0]) - y(d[1]));
+
+  g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
+  g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+}
+
+// Gráfico 2: boxplot simplificado de ADR
+function drawADR(g, w, h) {
+  const profiles = [...new Set(data_adr.map(d => d.profile))];
+  const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(data_adr, d => d.adr)])
+    .range([h, 0]);
+
+  profiles.forEach(profile => {
+    const vals = data_adr.filter(d => d.profile === profile).map(d => d.adr).sort(d3.ascending);
+    const q1  = d3.quantile(vals, 0.25);
+    const med = d3.quantile(vals, 0.5);
+    const q3  = d3.quantile(vals, 0.75);
+    const iqr = q3 - q1;
+    const lo  = Math.max(d3.min(vals), q1 - 1.5 * iqr);
+    const hi  = Math.min(d3.max(vals), q3 + 1.5 * iqr);
+    const cx  = x(profile) + x.bandwidth() / 2;
+    const bw  = x.bandwidth();
+
+    // bigotes
+    g.append("line").attr("x1", cx).attr("x2", cx)
+      .attr("y1", y(lo)).attr("y2", y(hi))
+      .attr("stroke", color(profile)).attr("stroke-width", 1.5);
+    // caja
+    g.append("rect")
+      .attr("x", x(profile)).attr("width", bw)
+      .attr("y", y(q3)).attr("height", y(q1) - y(q3))
+      .attr("fill", color(profile)).attr("opacity", 0.7);
+    // mediana
+    g.append("line").attr("x1", x(profile)).attr("x2", x(profile) + bw)
+      .attr("y1", y(med)).attr("y2", y(med))
+      .attr("stroke", "white").attr("stroke-width", 2);
+  });
+
+  g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
+  g.append("g").call(d3.axisLeft(y));
+}
+
+// Gráfico 3: cancelaciones
+function drawCancels(g, w, h) {
+  const profiles  = [...new Set(data_cancel.map(d => d.profile))];
+  const canceled  = data_cancel.filter(d => d.is_canceled == 1);
+
+  const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
+  const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
+
+  g.selectAll("rect")
+    .data(canceled)
+    .join("rect")
+    .attr("x", d => x(d.profile))
+    .attr("width", x.bandwidth())
+    .attr("y", d => y(d.prop))
+    .attr("height", d => h - y(d.prop))
+    .attr("fill", d => color(d.profile));
+
+  g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
+  g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+}
+
+// Gráfico 4: meses
+function drawMonths(g, w, h) {
+  const months   = [...new Set(data_month.map(d => d.arrival_date_month))];
+  const profiles = [...new Set(data_month.map(d => d.profile))];
+
+  const x = d3.scaleBand().domain(months).range([0, w]).padding(0.1);
+  const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
+
+  const stack = d3.stack().keys(profiles)
+    .value((d, key) => {
+      const found = data_month.find(r => r.arrival_date_month === d && r.profile === key);
+      return found ? found.prop : 0;
+    });
+
+  const series = stack(months.map(m => ({ arrival_date_month: m })));
+
+  g.selectAll("g.serie")
+    .data(series)
+    .join("g")
+    .attr("fill", d => color(d.key))
+    .selectAll("rect")
+    .data(d => d)
+    .join("rect")
+    .attr("x", d => x(d.data.arrival_date_month))
+    .attr("width", x.bandwidth())
+    .attr("y", d => y(d[1]))
+    .attr("height", d => y(d[0]) - y(d[1]));
+
+  g.append("g")
+    .call(d3.axisBottom(x).tickSize(0))
+    .attr("transform", `translate(0,${h})`)
+    .selectAll("text").attr("transform", "rotate(-45)").attr("text-anchor", "end");
+  g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+}
+
+// Iniciar en step 0
+drawChart(0);
+</script>
+```
