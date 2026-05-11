@@ -6,6 +6,7 @@ format:
     css: styles.css
     toc: false
     embed-resources: true
+    page-layout: full
 ---
 
 ```{r setup, include=FALSE}
@@ -14,147 +15,399 @@ library(dplyr)
 library(jsonlite)
 
 x <- read.csv("datasets/hotel_bookings_v2.csv", stringsAsFactors = TRUE)
+
+x$is_canceled       <- as.factor(x$is_canceled)
+x$is_repeated_guest <- factor(x$is_repeated_guest, levels = c(0,1), labels = c("No","Sí"))
+x$profile <- factor(x$profile, levels = c("Single","Couple","Family","Group"))
+x$arrival_date_month <- factor(
+  x$arrival_date_month,
+  levels = c("January","February","March","April","May","June",
+             "July","August","September","October","November","December"),
+  ordered = TRUE
+)
 ```
 
 ```{r export-data, include=FALSE}
-# Gráfico 1: perfil por tipo de hotel
-g1 <- x |>
+g1 <- x |> count(profile) |> toJSON()
+
+g2 <- x |>
   count(profile, hotel) |>
   group_by(profile) |>
   mutate(prop = n / sum(n)) |>
   toJSON()
 
-# Gráfico 2: ADR por perfil (datos resumidos para violin)
-g2 <- x |>
+g3 <- x |>
   select(profile, adr) |>
-  filter(adr < 500) |>  # quitar outliers extremos
+  filter(adr < 500) |>
   toJSON()
 
-# Gráfico 3: cancelaciones por perfil
-g3 <- x |>
+g4 <- x |>
   count(profile, is_canceled) |>
   group_by(profile) |>
   mutate(prop = n / sum(n)) |>
   toJSON()
 
-# Gráfico 4: perfil por mes
-months_order <- c("January","February","March","April","May","June",
-                  "July","August","September","October","November","December")
-g4 <- x |>
-  mutate(arrival_date_month = factor(arrival_date_month, levels = months_order)) |>
+g5 <- x |>
+  count(arrival_date_year, profile) |>
+  toJSON()
+
+g6 <- x |>
   count(arrival_date_month, profile) |>
-  group_by(arrival_date_month) |>
+  toJSON()
+
+g7 <- x |>
+  select(profile, lead_time) |>
+  filter(lead_time < 600) |>
+  toJSON()
+
+g8 <- x |>
+  select(profile, total_of_special_requests) |>
+  toJSON()
+
+g9 <- x |>
+  count(profile, is_repeated_guest) |>
+  group_by(profile) |>
   mutate(prop = n / sum(n)) |>
   toJSON()
 ```
 
-<!-- Inyectar datos como variables JS globales -->
 ```{r inject-data, results='asis', echo=FALSE}
 cat(paste0("<script>
-  const data_hotel   = ", g1, ";
-  const data_adr     = ", g2, ";
-  const data_cancel  = ", g3, ";
-  const data_month   = ", g4, ";
+  const data_dist     = ", g1, ";
+  const data_hotel    = ", g2, ";
+  const data_adr      = ", g3, ";
+  const data_cancel   = ", g4, ";
+  const data_year     = ", g5, ";
+  const data_month    = ", g6, ";
+  const data_lead     = ", g7, ";
+  const data_special  = ", g8, ";
+  const data_repeated = ", g9, ";
 </script>"))
 ```
 
 ```{=html}
-<!-- Scrollytelling container -->
+<!-- ── INTRODUCCIÓN ─────────────────────────────────────── -->
+<div class="intro-section">
+  <p class="intro-text">
+    Este análisis explora cómo el perfil del turista — definido por la composición
+    del grupo — influye en el comportamiento de reserva hotelera: tipo de hotel elegido,
+    precio pagado, cancelaciones, estacionalidad y fidelidad.
+  </p>
 
+  <table class="profile-table">
+    <thead>
+      <tr>
+        <th>Perfil</th>
+        <th>Descripción</th>
+        <th>Característica principal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-single">Single</span></td>
+        <td>Una persona adulta</td>
+        <td>Viajero independiente, frecuentemente por trabajo</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-couple">Couple</span></td>
+        <td>Dos adultos</td>
+        <td>Perfil más común, mayor tendencia a cancelar</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-family">Family</span></td>
+        <td>Reservas con niños o bebés</td>
+        <td>Prefieren resorts, mayor gasto y peticiones especiales</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-group">Group</span></td>
+        <td>Tres o más adultos</td>
+        <td>Más habituales en ciudad, planifican con más antelación</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ── SCROLLYTELLING ──────────────────────────────────── -->
 <div id="scrolly">
 
   <div id="sticky-chart">
-    <!-- El gráfico se queda fijo mientras scrolleas -->
     <div id="chart-title"></div>
     <div id="chart-subtitle"></div>
-    <svg id="main-chart" width="600" height="400"></svg>
+    <svg id="main-chart" style="width:100%; height:500px;"></svg>
   </div>
 
   <div id="steps">
+
     <div class="step" data-step="0">
-      <p><strong>¿Quiénes se hospedan en hoteles de ciudad vs resort?</strong>
-      Los turistas de ocio dominan los resorts, mientras que los de negocios 
-      prefieren los hoteles urbanos.</p>
+      <span class="step-num">01</span>
+      <h3>¿Cuántas reservas hay por perfil?</h3>
+      <p>Las parejas dominan el dataset con diferencia. Los grupos representan
+      una fracción muy pequeña del total de reservas.</p>
     </div>
+
     <div class="step" data-step="1">
-      <p><strong>¿Cuánto pagan según su perfil?</strong>
-      El precio medio diario (ADR) varía notablemente: 
-      los turistas de ocio muestran mayor dispersión en el gasto.</p>
+      <span class="step-num">02</span>
+      <h3>¿Qué tipo de hotel eligen?</h3>
+      <p>Las familias son quienes más eligen el Resort Hotel (más del 40%).
+      Las reservas grupales, en cambio, se concentran mayoritariamente en hoteles de ciudad.</p>
     </div>
+
     <div class="step" data-step="2">
-      <p><strong>¿Quién cancela más?</strong>
-      Las cancelaciones no se distribuyen igual entre perfiles: 
-      algunos cancelan casi el doble que otros.</p>
+      <span class="step-num">03</span>
+      <h3>¿Cuánto pagan por noche?</h3>
+      <p>Las familias y grupos presentan un ADR más elevado. Los viajeros
+      individuales y parejas muestran distribuciones más compactas y con menor gasto medio.</p>
     </div>
+
     <div class="step" data-step="3">
-      <p><strong>¿Hay estacionalidad por perfil?</strong>
-      Verano concentra el turismo de ocio; 
-      el de negocios se mantiene más estable todo el año.</p>
+      <span class="step-num">04</span>
+      <h3>¿Quién cancela más?</h3>
+      <p>Las parejas tienen una tasa de cancelación ligeramente superior (~40%).
+      Los grupos son los más fieles a sus reservas.</p>
+    </div>
+
+    <div class="step" data-step="4">
+      <span class="step-num">05</span>
+      <h3>¿Cómo evolucionan año a año?</h3>
+      <p>Todos los perfiles crecen en 2016 y decaen en 2017, pero manteniéndose
+      por encima de 2015. El comportamiento es independiente del perfil turístico.</p>
+    </div>
+
+    <div class="step" data-step="5">
+      <span class="step-num">06</span>
+      <h3>¿Hay estacionalidad?</h3>
+      <p>Julio y agosto concentran la mayoría de reservas — excepto en viajeros
+      individuales, que evitan la temporada alta y prefieren meses más tranquilos.</p>
+    </div>
+
+    <div class="step" data-step="6">
+      <span class="step-num">07</span>
+      <h3>¿Con cuánta antelación reservan?</h3>
+      <p>Los individuales reservan con muy poca antelación. Las parejas son
+      quienes planifican el viaje con más tiempo.</p>
+    </div>
+
+    <div class="step" data-step="7">
+      <span class="step-num">08</span>
+      <h3>¿Quién hace más peticiones especiales?</h3>
+      <p>Familias y grupos realizan más peticiones: habitaciones comunicadas,
+      camas extra, cunas. Los individuales apenas hacen peticiones.</p>
+    </div>
+
+    <div class="step" data-step="8">
+      <span class="step-num">09</span>
+      <h3>¿Quién repite más?</h3>
+      <p>Los viajeros individuales son los más fieles, probablemente por viajes
+      recurrentes de trabajo. Familias y grupos tienen la menor tasa de repetición.</p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── CONCLUSIONES ────────────────────────────────────── -->
+<div class="conclusions-section">
+
+  <div class="conclusions-header">
+    <div class="conclusions-eyebrow">Resumen del análisis</div>
+    <h2 class="conclusions-title">¿Qué nos dicen los datos?</h2>
+    <p class="conclusions-lead">
+      Cada perfil turístico deja una huella diferente en los datos de reservas.
+      Estas son las principales conclusiones extraídas del análisis.
+    </p>
+  </div>
+
+  <div class="conclusions-grid">
+
+    <div class="conclusion-card">
+      <div class="conclusion-icon" style="background:#E6F1FB;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </div>
+      <div class="conclusion-badge badge-single">Single</div>
+      <ul class="conclusion-list">
+        <li>Perfil con <strong>menor gasto</strong> por noche (ADR más bajo).</li>
+        <li>Reserva con <strong>poca antelación</strong>, patrón típico de viajes de trabajo.</li>
+        <li>Evita la <strong>temporada alta</strong>: menos reservas en julio y agosto.</li>
+        <li>Es el perfil <strong>más fiel</strong>: mayor tasa de clientes repetidores.</li>
+        <li>Casi <strong>sin peticiones especiales</strong>.</li>
+      </ul>
+    </div>
+
+    <div class="conclusion-card">
+      <div class="conclusion-icon" style="background:#E1F5EE;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="8" r="3"/>
+          <circle cx="16" cy="8" r="3"/>
+          <path d="M2 20c0-3.3 3.1-6 7-6"/>
+          <path d="M22 20c0-3.3-3.1-6-7-6"/>
+        </svg>
+      </div>
+      <div class="conclusion-badge badge-couple">Couple</div>
+      <ul class="conclusion-list">
+        <li>El perfil <strong>más frecuente</strong> en el dataset.</li>
+        <li>Mayor <strong>tasa de cancelación</strong> (~40%), la más alta de todos los perfiles.</li>
+        <li>Planifican con <strong>más antelación</strong> que cualquier otro perfil.</li>
+        <li>Prefieren el <strong>City Hotel</strong>, aunque también eligen resort.</li>
+        <li>Gasto medio moderado, sin grandes extremos.</li>
+      </ul>
+    </div>
+
+    <div class="conclusion-card">
+      <div class="conclusion-icon" style="background:#FAECE7;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D85A30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="7" r="3"/>
+          <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>
+          <circle cx="5" cy="11" r="2.5"/>
+          <circle cx="19" cy="11" r="2.5"/>
+        </svg>
+      </div>
+      <div class="conclusion-badge badge-family">Family</div>
+      <ul class="conclusion-list">
+        <li>El perfil que <strong>más elige el Resort Hotel</strong> (más del 40%).</li>
+        <li><strong>Mayor ADR</strong>: pagan más por noche que individuales y parejas.</li>
+        <li>Concentran reservas en <strong>verano</strong>, coincidiendo con vacaciones escolares.</li>
+        <li>Realizan el <strong>mayor número de peticiones especiales</strong>: cunas, habitaciones conectadas, etc.</li>
+        <li>Baja tasa de repetición: cada viaje familiar es más esporádico.</li>
+      </ul>
+    </div>
+
+    <div class="conclusion-card">
+      <div class="conclusion-icon" style="background:#FAEEDA;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="8" r="2.5"/>
+          <circle cx="16" cy="8" r="2.5"/>
+          <circle cx="8" cy="16" r="2.5"/>
+          <circle cx="16" cy="16" r="2.5"/>
+        </svg>
+      </div>
+      <div class="conclusion-badge badge-group">Group</div>
+      <ul class="conclusion-list">
+        <li>El perfil <strong>menos frecuente</strong>, una fracción pequeña del total.</li>
+        <li>Fuerte preferencia por el <strong>City Hotel</strong>.</li>
+        <li>ADR elevado, comparable al de las familias.</li>
+        <li><strong>Menor tasa de cancelación</strong>: los grupos confirman más sus reservas.</li>
+        <li>Alta cantidad de <strong>peticiones especiales</strong> por la logística del grupo.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="conclusions-footer">
+    <div class="conclusions-takeaway">
+      <span class="takeaway-label">Conclusión global</span>
+      <p>
+        El perfil del turista es un factor determinante en el comportamiento de reserva.
+        Las familias y grupos generan mayor ingreso por noche pero también más complejidad operativa.
+        Los viajeros individuales, aunque gastan menos, son los clientes más fieles y predecibles.
+        Las parejas, pese a ser el grupo más numeroso, presentan el mayor riesgo de cancelación,
+        lo que supone un reto de gestión de disponibilidad para los hoteles.
+      </p>
     </div>
   </div>
 
 </div>
 ```
 
-
 ```{=html}
 <script src="https://cdn.jsdelivr.net/npm/scrollama@3.2.0/build/scrollama.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
 <script>
-// ── Configuración scrollama ──────────────────────────────
-const scroller = scrollama();
 
+const color = d3.scaleOrdinal()
+  .domain(["Single", "Couple", "Family", "Group"])
+  .range(["#185FA5", "#D85A30", "#1D9E75", "#F2C14E"]);
+
+const profiles = ["Single", "Couple", "Family", "Group"];
+let currentStep = 0;
+
+const scroller = scrollama();
 scroller
-  .setup({
-    step: ".step",
-    offset: 0.5,
-    debug: false
-  })
+  .setup({ step: ".step", offset: 0.5 })
   .onStepEnter(({ index }) => {
-    document.querySelectorAll(".step")
-      .forEach(s => s.classList.remove("is-active"));
+    currentStep = index;
+    document.querySelectorAll(".step").forEach(s => s.classList.remove("is-active"));
     document.querySelectorAll(".step")[index].classList.add("is-active");
     drawChart(index);
   });
 
-window.addEventListener("resize", scroller.resize);
+window.addEventListener("resize", () => {
+  scroller.resize();
+  drawChart(currentStep);
+});
 
-// ── Lógica de gráficos con D3 ────────────────────────────
 function drawChart(step) {
   const svg = d3.select("#main-chart");
   svg.selectAll("*").remove();
-  const W = 600, H = 400;
-  const margin = { top: 20, right: 30, bottom: 60, left: 60 };
+
+  const svgEl = document.getElementById("main-chart");
+  const W = svgEl.clientWidth;
+  const H = svgEl.clientHeight;
+  const margin = { top: 30, right: 40, bottom: 70, left: 70 };
   const w = W - margin.left - margin.right;
   const h = H - margin.top - margin.bottom;
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
   const titles = [
-    ["Tipo de hotel por perfil", "Proporción de reservas en City Hotel vs Resort Hotel"],
-    ["Precio medio diario (ADR)", "Distribución del gasto por perfil de turista"],
-    ["Tasa de cancelación", "Proporción de cancelaciones por perfil"],
-    ["Estacionalidad", "Perfil de turista por mes del año"]
+    ["Distribución de perfiles turísticos",     "Número total de reservas por perfil"],
+    ["Tipo de hotel según perfil",               "Proporción de City Hotel vs Resort Hotel"],
+    ["Precio medio diario (ADR)",                "Distribución del gasto por perfil"],
+    ["Tasa de cancelación",                      "Proporción de cancelaciones por perfil"],
+    ["Evolución anual de reservas",              "Número de reservas por año y perfil (2015–2017)"],
+    ["Estacionalidad mensual",                   "Número de reservas por mes y perfil"],
+    ["Antelación de la reserva",                 "Días de antelación por perfil"],
+    ["Peticiones especiales",                    "Número de peticiones especiales por perfil"],
+    ["Clientes repetidores",                     "Proporción de clientes que repiten por perfil"]
   ];
+
   document.getElementById("chart-title").textContent    = titles[step][0];
   document.getElementById("chart-subtitle").textContent = titles[step][1];
 
-  if (step === 0) drawHotelType(g, w, h);
-  if (step === 1) drawADR(g, w, h);
-  if (step === 2) drawCancels(g, w, h);
-  if (step === 3) drawMonths(g, w, h);
+  if (step === 0) drawDist(g, w, h);
+  if (step === 1) drawHotelType(g, w, h);
+  if (step === 2) drawBoxplot(g, w, h, data_adr,     "adr");
+  if (step === 3) drawCancels(g, w, h);
+  if (step === 4) drawYear(g, w, h);
+  if (step === 5) drawMonth(g, w, h);
+  if (step === 6) drawBoxplot(g, w, h, data_lead,    "lead_time");
+  if (step === 7) drawBoxplot(g, w, h, data_special, "total_of_special_requests");
+  if (step === 8) drawRepeated(g, w, h);
 }
 
-const color = d3.scaleOrdinal()
-  .domain(["Single", "Couple", "Family", "Group"])
-  .range(["#185FA5", "#1D9E75", "#D85A30", "#F2C14E"]);
+function drawDist(g, w, h) {
+  const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(data_dist, d => d.n) * 1.1])
+    .range([h, 0]);
 
-// Gráfico 1: barras apiladas hotel
+  g.selectAll("rect").data(data_dist).join("rect")
+    .attr("x", d => x(d.profile))
+    .attr("width", x.bandwidth())
+    .attr("y", d => y(d.n))
+    .attr("height", d => h - y(d.n))
+    .attr("fill", d => color(d.profile))
+    .attr("rx", 4);
+
+  g.selectAll(".label").data(data_dist).join("text")
+    .attr("class", "label")
+    .attr("x", d => x(d.profile) + x.bandwidth() / 2)
+    .attr("y", d => y(d.n) - 6)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "13px")
+    .attr("fill", "#444")
+    .text(d => d3.format(",")(d.n));
+
+  g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
+  g.append("g").call(d3.axisLeft(y).ticks(6).tickFormat(d3.format(",")));
+}
+
 function drawHotelType(g, w, h) {
-  const profiles = [...new Set(data_hotel.map(d => d.profile))];
-  const hotels   = [...new Set(data_hotel.map(d => d.hotel))];
-
+  const hotels = ["City Hotel", "Resort Hotel"];
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
   const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
+  const hotelColor = d3.scaleOrdinal().domain(hotels).range(["#185FA5","#D85A30"]);
+
   const stack = d3.stack().keys(hotels)
     .value((d, key) => {
       const found = data_hotel.find(r => r.profile === d && r.hotel === key);
@@ -163,34 +416,38 @@ function drawHotelType(g, w, h) {
 
   const series = stack(profiles.map(p => ({ profile: p })));
 
-  g.selectAll("g.serie")
-    .data(series)
-    .join("g")
-    .attr("fill", d => color(d.key))
-    .selectAll("rect")
-    .data(d => d)
-    .join("rect")
+  g.selectAll("g.serie").data(series).join("g")
+    .attr("fill", d => hotelColor(d.key))
+    .selectAll("rect").data(d => d).join("rect")
     .attr("x", d => x(d.data.profile))
     .attr("width", x.bandwidth())
     .attr("y", d => y(d[1]))
     .attr("height", d => y(d[0]) - y(d[1]));
 
+  hotels.forEach((h_label, i) => {
+    g.append("rect").attr("x", i * 140).attr("y", -24).attr("width", 12).attr("height", 12)
+      .attr("fill", hotelColor(h_label)).attr("rx", 2);
+    g.append("text").attr("x", i * 140 + 18).attr("y", -14)
+      .attr("font-size", "12px").attr("fill", "#555").text(h_label);
+  });
+
   g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
   g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
 }
 
-// Gráfico 2: boxplot simplificado de ADR
-function drawADR(g, w, h) {
-  const profiles = [...new Set(data_adr.map(d => d.profile))];
+function drawBoxplot(g, w, h, dataset, field) {
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
   const y = d3.scaleLinear()
-    .domain([0, d3.max(data_adr, d => d.adr)])
+    .domain([0, d3.max(dataset, d => d[field]) * 1.05])
     .range([h, 0]);
 
   profiles.forEach(profile => {
-    const vals = data_adr.filter(d => d.profile === profile).map(d => d.adr).sort(d3.ascending);
+    const vals = dataset.filter(d => d.profile === profile)
+      .map(d => d[field]).sort(d3.ascending);
+    if (!vals.length) return;
+
     const q1  = d3.quantile(vals, 0.25);
-    const med = d3.quantile(vals, 0.5);
+    const med = d3.quantile(vals, 0.50);
     const q3  = d3.quantile(vals, 0.75);
     const iqr = q3 - q1;
     const lo  = Math.max(d3.min(vals), q1 - 1.5 * iqr);
@@ -198,82 +455,193 @@ function drawADR(g, w, h) {
     const cx  = x(profile) + x.bandwidth() / 2;
     const bw  = x.bandwidth();
 
-    // bigotes
-    g.append("line").attr("x1", cx).attr("x2", cx)
+    g.append("line")
+      .attr("x1", cx).attr("x2", cx)
       .attr("y1", y(lo)).attr("y2", y(hi))
       .attr("stroke", color(profile)).attr("stroke-width", 1.5);
-    // caja
+
     g.append("rect")
       .attr("x", x(profile)).attr("width", bw)
       .attr("y", y(q3)).attr("height", y(q1) - y(q3))
-      .attr("fill", color(profile)).attr("opacity", 0.7);
-    // mediana
-    g.append("line").attr("x1", x(profile)).attr("x2", x(profile) + bw)
+      .attr("fill", color(profile)).attr("opacity", 0.75).attr("rx", 3);
+
+    g.append("line")
+      .attr("x1", x(profile)).attr("x2", x(profile) + bw)
       .attr("y1", y(med)).attr("y2", y(med))
-      .attr("stroke", "white").attr("stroke-width", 2);
+      .attr("stroke", "white").attr("stroke-width", 2.5);
+
+    [lo, hi].forEach(v => {
+      g.append("line")
+        .attr("x1", cx - bw * 0.2).attr("x2", cx + bw * 0.2)
+        .attr("y1", y(v)).attr("y2", y(v))
+        .attr("stroke", color(profile)).attr("stroke-width", 1.5);
+    });
   });
 
   g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
-  g.append("g").call(d3.axisLeft(y));
+  g.append("g").call(d3.axisLeft(y).ticks(6));
 }
 
-// Gráfico 3: cancelaciones
 function drawCancels(g, w, h) {
-  const profiles  = [...new Set(data_cancel.map(d => d.profile))];
-  const canceled  = data_cancel.filter(d => d.is_canceled == 1);
-
+  const cancelColor = d3.scaleOrdinal().domain(["0","1"]).range(["#1D9E75","#D85A30"]);
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
   const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
 
-  g.selectAll("rect")
-    .data(canceled)
-    .join("rect")
-    .attr("x", d => x(d.profile))
-    .attr("width", x.bandwidth())
-    .attr("y", d => y(d.prop))
-    .attr("height", d => h - y(d.prop))
-    .attr("fill", d => color(d.profile));
-
-  g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
-  g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
-}
-
-// Gráfico 4: meses
-function drawMonths(g, w, h) {
-  const months   = [...new Set(data_month.map(d => d.arrival_date_month))];
-  const profiles = [...new Set(data_month.map(d => d.profile))];
-
-  const x = d3.scaleBand().domain(months).range([0, w]).padding(0.1);
-  const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
-
-  const stack = d3.stack().keys(profiles)
+  const stack = d3.stack().keys(["0","1"])
     .value((d, key) => {
-      const found = data_month.find(r => r.arrival_date_month === d && r.profile === key);
+      const found = data_cancel.find(r => r.profile === d && String(r.is_canceled) === key);
       return found ? found.prop : 0;
     });
 
-  const series = stack(months.map(m => ({ arrival_date_month: m })));
+  const series = stack(profiles.map(p => ({ profile: p })));
 
-  g.selectAll("g.serie")
-    .data(series)
-    .join("g")
-    .attr("fill", d => color(d.key))
-    .selectAll("rect")
-    .data(d => d)
-    .join("rect")
-    .attr("x", d => x(d.data.arrival_date_month))
+  g.selectAll("g.serie").data(series).join("g")
+    .attr("fill", d => cancelColor(d.key))
+    .selectAll("rect").data(d => d).join("rect")
+    .attr("x", d => x(d.data.profile))
     .attr("width", x.bandwidth())
     .attr("y", d => y(d[1]))
     .attr("height", d => y(d[0]) - y(d[1]));
 
-  g.append("g")
-    .call(d3.axisBottom(x).tickSize(0))
-    .attr("transform", `translate(0,${h})`)
-    .selectAll("text").attr("transform", "rotate(-45)").attr("text-anchor", "end");
+  ["No cancelada", "Cancelada"].forEach((lbl, i) => {
+    g.append("rect").attr("x", i * 150).attr("y", -24)
+      .attr("width", 12).attr("height", 12)
+      .attr("fill", cancelColor(String(i))).attr("rx", 2);
+    g.append("text").attr("x", i * 150 + 18).attr("y", -14)
+      .attr("font-size", "12px").attr("fill", "#555").text(lbl);
+  });
+
+  g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
   g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
 }
 
-// Iniciar en step 0
+function drawYear(g, w, h) {
+  const years = [2015, 2016, 2017];
+  const x = d3.scalePoint().domain(years).range([0, w]).padding(0.3);
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(data_year, d => d.n) * 1.1])
+    .range([h, 0]);
+
+  const line = d3.line()
+    .x(d => x(d.arrival_date_year))
+    .y(d => y(d.n));
+
+  profiles.forEach(profile => {
+    const pdata = data_year.filter(d => d.profile === profile)
+      .sort((a, b) => a.arrival_date_year - b.arrival_date_year);
+
+    g.append("path").datum(pdata)
+      .attr("fill", "none")
+      .attr("stroke", color(profile))
+      .attr("stroke-width", 2.5)
+      .attr("d", line);
+
+    g.selectAll(`.dot-${profile}`).data(pdata).join("circle")
+      .attr("cx", d => x(d.arrival_date_year))
+      .attr("cy", d => y(d.n))
+      .attr("r", 5)
+      .attr("fill", color(profile));
+
+    g.selectAll(`.lbl-${profile}`).data(pdata).join("text")
+      .attr("x", d => x(d.arrival_date_year))
+      .attr("y", d => y(d.n) - 10)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "11px")
+      .attr("fill", color(profile))
+      .text(d => d3.format(",")(d.n));
+  });
+
+  profiles.forEach((p, i) => {
+    g.append("line").attr("x1", i * 100).attr("x2", i * 100 + 16)
+      .attr("y1", -18).attr("y2", -18)
+      .attr("stroke", color(p)).attr("stroke-width", 2.5);
+    g.append("text").attr("x", i * 100 + 20).attr("y", -14)
+      .attr("font-size", "12px").attr("fill", "#555").text(p);
+  });
+
+  g.append("g").call(d3.axisBottom(x).tickFormat(d3.format("d")))
+    .attr("transform", `translate(0,${h})`);
+  g.append("g").call(d3.axisLeft(y).ticks(6).tickFormat(d3.format(",")));
+}
+
+function drawMonth(g, w, h) {
+  const months = ["January","February","March","April","May","June",
+                  "July","August","September","October","November","December"];
+  const shortM  = ["Jan","Feb","Mar","Apr","May","Jun",
+                   "Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  const x = d3.scalePoint().domain(months).range([0, w]).padding(0.2);
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(data_month, d => d.n) * 1.1])
+    .range([h, 0]);
+
+  const line = d3.line()
+    .x(d => x(d.arrival_date_month))
+    .y(d => y(d.n));
+
+  profiles.forEach(profile => {
+    const pdata = data_month.filter(d => d.profile === profile);
+    g.append("path").datum(pdata)
+      .attr("fill", "none")
+      .attr("stroke", color(profile))
+      .attr("stroke-width", 2.5)
+      .attr("d", line);
+
+    g.selectAll(`.dot-${profile}`).data(pdata).join("circle")
+      .attr("cx", d => x(d.arrival_date_month))
+      .attr("cy", d => y(d.n))
+      .attr("r", 4)
+      .attr("fill", color(profile));
+  });
+
+  profiles.forEach((p, i) => {
+    g.append("line").attr("x1", i * 100).attr("x2", i * 100 + 16)
+      .attr("y1", -18).attr("y2", -18)
+      .attr("stroke", color(p)).attr("stroke-width", 2.5);
+    g.append("text").attr("x", i * 100 + 20).attr("y", -14)
+      .attr("font-size", "12px").attr("fill", "#555").text(p);
+  });
+
+  g.append("g")
+    .call(d3.axisBottom(x).tickFormat((d, i) => shortM[i]))
+    .attr("transform", `translate(0,${h})`)
+    .selectAll("text").attr("transform", "rotate(-35)").attr("text-anchor", "end");
+  g.append("g").call(d3.axisLeft(y).ticks(6).tickFormat(d3.format(",")));
+}
+
+function drawRepeated(g, w, h) {
+  const repColor = d3.scaleOrdinal().domain(["No","Sí"]).range(["#B4B2A9","#185FA5"]);
+  const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
+  const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
+
+  const stack = d3.stack().keys(["No","Sí"])
+    .value((d, key) => {
+      const found = data_repeated.find(r => r.profile === d && r.is_repeated_guest === key);
+      return found ? found.prop : 0;
+    });
+
+  const series = stack(profiles.map(p => ({ profile: p })));
+
+  g.selectAll("g.serie").data(series).join("g")
+    .attr("fill", d => repColor(d.key))
+    .selectAll("rect").data(d => d).join("rect")
+    .attr("x", d => x(d.data.profile))
+    .attr("width", x.bandwidth())
+    .attr("y", d => y(d[1]))
+    .attr("height", d => y(d[0]) - y(d[1]));
+
+  ["No","Sí"].forEach((lbl, i) => {
+    g.append("rect").attr("x", i * 120).attr("y", -24)
+      .attr("width", 12).attr("height", 12)
+      .attr("fill", repColor(lbl)).attr("rx", 2);
+    g.append("text").attr("x", i * 120 + 18).attr("y", -14)
+      .attr("font-size", "12px").attr("fill", "#555").text(`Repite: ${lbl}`);
+  });
+
+  g.append("g").call(d3.axisBottom(x)).attr("transform", `translate(0,${h})`);
+  g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+}
+
 drawChart(0);
 </script>
 ```
