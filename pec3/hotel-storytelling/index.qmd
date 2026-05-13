@@ -89,9 +89,9 @@ cat(paste0("<script>
 <!-- ── INTRODUCCIÓN ─────────────────────────────────────── -->
 <div class="intro-section">
   <p class="intro-text">
-    Este análisis explora cómo el perfil del turista — definido por la composición
-    del grupo — influye en el comportamiento de reserva hotelera: tipo de hotel elegido,
-    precio pagado, cancelaciones, estacionalidad y fidelidad.
+    Este análisis explora cómo el perfil del turista, definido por la composición
+    del grupo de personas que forman parte de la reserva, influye en el resto de 
+    características de la misma.
   </p>
 
   <table class="profile-table">
@@ -99,29 +99,29 @@ cat(paste0("<script>
       <tr>
         <th>Perfil</th>
         <th>Descripción</th>
-        <th>Característica principal</th>
+        <th>Preguntas que pueden surgirnos</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td><span class="badge badge-single">Single</span></td>
         <td>Una persona adulta</td>
-        <td>Viajero independiente, frecuentemente por trabajo</td>
+        <td>¿Es fiel a un tipo de hotel? ¿Planifica con antelación?</td>
       </tr>
       <tr>
         <td><span class="badge badge-couple">Couple</span></td>
         <td>Dos adultos</td>
-        <td>Perfil más común, mayor tendencia a cancelar</td>
+        <td>¿Es el perfil más común? ¿Cancela más que otros?</td>
       </tr>
       <tr>
         <td><span class="badge badge-family">Family</span></td>
         <td>Reservas con niños o bebés</td>
-        <td>Prefieren resorts, mayor gasto y peticiones especiales</td>
+        <td>¿Viajan más en verano? ¿Hacen más peticiones especiales?</td>
       </tr>
       <tr>
         <td><span class="badge badge-group">Group</span></td>
         <td>Tres o más adultos</td>
-        <td>Más habituales en ciudad, planifican con más antelación</td>
+        <td>¿Con cuánta antelación reservan? ¿Sus reservas tienen un mayor precio medio?</td>
       </tr>
     </tbody>
   </table>
@@ -141,15 +141,15 @@ cat(paste0("<script>
     <div class="step" data-step="0">
       <span class="step-num">01</span>
       <h3>¿Cuántas reservas hay por perfil?</h3>
-      <p>Las parejas dominan el dataset con diferencia. Los grupos representan
+      <p>Las reservas dobles predominan con diferencia. Por contra, los grupos representan
       una fracción muy pequeña del total de reservas.</p>
     </div>
 
     <div class="step" data-step="1">
       <span class="step-num">02</span>
       <h3>¿Qué tipo de hotel eligen?</h3>
-      <p>Las familias son quienes más eligen el Resort Hotel (más del 40%).
-      Las reservas grupales, en cambio, se concentran mayoritariamente en hoteles de ciudad.</p>
+      <p>Las familias son quienes más eligen el Resort Hotel (+40%).
+      Las reservas grupales, en cambio, se concentran mayoritariamente en el City Hotel (+80%).</p>
     </div>
 
     <div class="step" data-step="2">
@@ -162,28 +162,30 @@ cat(paste0("<script>
     <div class="step" data-step="3">
       <span class="step-num">04</span>
       <h3>¿Quién cancela más?</h3>
-      <p>Las parejas tienen una tasa de cancelación ligeramente superior (~40%).
-      Los grupos son los más fieles a sus reservas.</p>
+      <p>Las parejas tienen una tasa de cancelación ligeramente superior (40%).
+      Los turistas que viajan solos cancelan con menor frecuencia (30%).</p>
     </div>
 
     <div class="step" data-step="4">
       <span class="step-num">05</span>
       <h3>¿Cómo evolucionan año a año?</h3>
-      <p>Todos los perfiles crecen en 2016 y decaen en 2017, pero manteniéndose
-      por encima de 2015. El comportamiento es independiente del perfil turístico.</p>
+      <p>Las reservas de todos los perfiles siguen un patrón similar: de 2015 a 
+      2016 experimentan una subida y decaen de 2016 a 2017, aunque manteniéndose en
+      cifras superiores a las de 2015.</p>
     </div>
 
     <div class="step" data-step="5">
       <span class="step-num">06</span>
       <h3>¿Hay estacionalidad?</h3>
-      <p>Julio y agosto concentran la mayoría de reservas — excepto en viajeros
-      individuales, que evitan la temporada alta y prefieren meses más tranquilos.</p>
+      <p>Julio y agosto concentran la mayoría de reservas a excepción de las de viajeros
+      individuales. 
+      Las reservas dobles son bastante más frecuentes en los meses centrales del año.</p>
     </div>
 
     <div class="step" data-step="6">
       <span class="step-num">07</span>
       <h3>¿Con cuánta antelación reservan?</h3>
-      <p>Los individuales reservan con muy poca antelación. Las parejas son
+      <p>Los viajeros individuales reservan con muy poca antelación. Las parejas son
       quienes planifican el viaje con más tiempo.</p>
     </div>
 
@@ -191,14 +193,14 @@ cat(paste0("<script>
       <span class="step-num">08</span>
       <h3>¿Quién hace más peticiones especiales?</h3>
       <p>Familias y grupos realizan más peticiones: habitaciones comunicadas,
-      camas extra, cunas. Los individuales apenas hacen peticiones.</p>
+      camas extra, cunas. En las individuales apenas se hacen peticiones.</p>
     </div>
 
     <div class="step" data-step="8">
       <span class="step-num">09</span>
       <h3>¿Quién repite más?</h3>
-      <p>Los viajeros individuales son los más fieles, probablemente por viajes
-      recurrentes de trabajo. Familias y grupos tienen la menor tasa de repetición.</p>
+      <p>Los viajeros individuales tienden más a repetir reserva. 
+      Familias y grupos tienen la menor tasa de repetición.</p>
     </div>
 
   </div>
@@ -230,7 +232,7 @@ cat(paste0("<script>
         <li>Perfil con <strong>menor gasto</strong> por noche (ADR más bajo).</li>
         <li>Reserva con <strong>poca antelación</strong>, patrón típico de viajes de trabajo.</li>
         <li>Evita la <strong>temporada alta</strong>: menos reservas en julio y agosto.</li>
-        <li>Es el perfil <strong>más fiel</strong>: mayor tasa de clientes repetidores.</li>
+        <li>Es el perfil <strong>más fiel</strong> (mayor tasa de clientes repetidores) y <strong>de mayor compromiso</strong> (menor tasa de cancelación).</li>
         <li>Casi <strong>sin peticiones especiales</strong>.</li>
       </ul>
     </div>
@@ -246,11 +248,11 @@ cat(paste0("<script>
       </div>
       <div class="conclusion-badge badge-couple">Couple</div>
       <ul class="conclusion-list">
-        <li>El perfil <strong>más frecuente</strong> en el dataset.</li>
-        <li>Mayor <strong>tasa de cancelación</strong> (~40%), la más alta de todos los perfiles.</li>
+        <li>El perfil <strong>más frecuente</strong>.</li>
+        <li>Tiene la mayor <strong>tasa de cancelación</strong> (40%) entre todos los perfiles.</li>
         <li>Planifican con <strong>más antelación</strong> que cualquier otro perfil.</li>
-        <li>Prefieren el <strong>City Hotel</strong>, aunque también eligen resort.</li>
-        <li>Gasto medio moderado, sin grandes extremos.</li>
+        <li>Prefieren los meses centrales del año (entre abril y octubre).</li>
+        <li>Es el perfil que experimenta una <strong>mayor crecida en 2016</strong>.</li>
       </ul>
     </div>
 
@@ -269,7 +271,7 @@ cat(paste0("<script>
         <li><strong>Mayor ADR</strong>: pagan más por noche que individuales y parejas.</li>
         <li>Concentran reservas en <strong>verano</strong>, coincidiendo con vacaciones escolares.</li>
         <li>Realizan el <strong>mayor número de peticiones especiales</strong>: cunas, habitaciones conectadas, etc.</li>
-        <li>Baja tasa de repetición: cada viaje familiar es más esporádico.</li>
+        <li>Baja tasa de repetición: los destinos de viajes familiares suelen variar.</li>
       </ul>
     </div>
 
@@ -284,10 +286,10 @@ cat(paste0("<script>
       </div>
       <div class="conclusion-badge badge-group">Group</div>
       <ul class="conclusion-list">
-        <li>El perfil <strong>menos frecuente</strong>, una fracción pequeña del total.</li>
-        <li>Fuerte preferencia por el <strong>City Hotel</strong>.</li>
+        <li>El perfil <strong>menos frecuente</strong>.</li>
+        <li>Fuerte preferencia por el <strong>City Hotel</strong> (más del 80%).</li>
         <li>ADR elevado, comparable al de las familias.</li>
-        <li><strong>Menor tasa de cancelación</strong>: los grupos confirman más sus reservas.</li>
+        <li><strong>Tasa de cancelación media</strong>: similar al de las familias y un punto medio entre la tasa de reservas individuales y dobles.</li>
         <li>Alta cantidad de <strong>peticiones especiales</strong> por la logística del grupo.</li>
       </ul>
     </div>
@@ -298,9 +300,9 @@ cat(paste0("<script>
     <div class="conclusions-takeaway">
       <span class="takeaway-label">Conclusión global</span>
       <p>
-        El perfil del turista es un factor determinante en el comportamiento de reserva.
+        <strong>El perfil del turista es un factor determinante en las características de la reserva</strong>.
         Las familias y grupos generan mayor ingreso por noche pero también más complejidad operativa.
-        Los viajeros individuales, aunque gastan menos, son los clientes más fieles y predecibles.
+        Los viajeros individuales, aunque gastan menos, son los clientes más fieles y comprometidos.
         Las parejas, pese a ser el grupo más numeroso, presentan el mayor riesgo de cancelación,
         lo que supone un reto de gestión de disponibilidad para los hoteles.
       </p>
@@ -410,7 +412,7 @@ function drawHotelType(g, w, h) {
 
   const stack = d3.stack().keys(hotels)
     .value((d, key) => {
-      const found = data_hotel.find(r => r.profile === d && r.hotel === key);
+      const found = data_hotel.find(r => r.profile === d.profile && r.hotel === key);
       return found ? found.prop : 0;
     });
 
@@ -483,30 +485,57 @@ function drawBoxplot(g, w, h, dataset, field) {
 }
 
 function drawCancels(g, w, h) {
-  const cancelColor = d3.scaleOrdinal().domain(["0","1"]).range(["#1D9E75","#D85A30"]);
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
   const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
+  const cancelColor = d3.scaleOrdinal()
+    .domain(["no", "yes"])
+    .range(["#1D9E75", "#D85A30"]);
 
-  const stack = d3.stack().keys(["0","1"])
-    .value((d, key) => {
-      const found = data_cancel.find(r => r.profile === d && String(r.is_canceled) === key);
-      return found ? found.prop : 0;
-    });
+  // Para cada perfil, calcular prop de cancelados y no cancelados
+  const barData = profiles.map(profile => {
+    const rows = data_cancel.filter(r => String(r.profile) === profile);
+    const total = d3.sum(rows, r => r.n);
+    const canceled = rows.find(r => Number(r.is_canceled) === 1);
+    const notCanceled = rows.find(r => Number(r.is_canceled) === 0);
+    return {
+      profile,
+      propNo: notCanceled ? notCanceled.n / total : 0,
+      propYes: canceled   ? canceled.n   / total : 0
+    };
+  });
 
-  const series = stack(profiles.map(p => ({ profile: p })));
-
-  g.selectAll("g.serie").data(series).join("g")
-    .attr("fill", d => cancelColor(d.key))
-    .selectAll("rect").data(d => d).join("rect")
-    .attr("x", d => x(d.data.profile))
+  // Dibujar segmento "No cancelada" (desde 0)
+  g.selectAll(".bar-no").data(barData).join("rect")
+    .attr("class", "bar-no")
+    .attr("x", d => x(d.profile))
     .attr("width", x.bandwidth())
-    .attr("y", d => y(d[1]))
-    .attr("height", d => y(d[0]) - y(d[1]));
+    .attr("y", d => y(d.propNo))
+    .attr("height", d => h - y(d.propNo))
+    .attr("fill", "#1D9E75");
 
-  ["No cancelada", "Cancelada"].forEach((lbl, i) => {
+  // Dibujar segmento "Cancelada" (apilado encima)
+  g.selectAll(".bar-yes").data(barData).join("rect")
+    .attr("class", "bar-yes")
+    .attr("x", d => x(d.profile))
+    .attr("width", x.bandwidth())
+    .attr("y", d => y(1))
+    .attr("height", d => y(d.propNo) - y(1))
+    .attr("fill", "#D85A30");
+
+  // Etiqueta de % cancelación encima de cada barra
+  g.selectAll(".pct-label").data(barData).join("text")
+    .attr("class", "pct-label")
+    .attr("x", d => x(d.profile) + x.bandwidth() / 2)
+    .attr("y", d => y(1) - 6)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "12px")
+    .attr("fill", "#D85A30")
+    .text(d => d3.format(".1%")(d.propYes));
+
+  // Leyenda
+  [["#1D9E75", "No cancelada"], ["#D85A30", "Cancelada"]].forEach(([col, lbl], i) => {
     g.append("rect").attr("x", i * 150).attr("y", -24)
-      .attr("width", 12).attr("height", 12)
-      .attr("fill", cancelColor(String(i))).attr("rx", 2);
+      .attr("width", 12).attr("height", 12).attr("fill", col).attr("rx", 2);
     g.append("text").attr("x", i * 150 + 18).attr("y", -14)
       .attr("font-size", "12px").attr("fill", "#555").text(lbl);
   });
@@ -616,7 +645,7 @@ function drawRepeated(g, w, h) {
 
   const stack = d3.stack().keys(["No","Sí"])
     .value((d, key) => {
-      const found = data_repeated.find(r => r.profile === d && r.is_repeated_guest === key);
+      const found = data_repeated.find(r => r.profile === d.profile && r.is_repeated_guest === key);
       return found ? found.prop : 0;
     });
 
