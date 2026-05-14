@@ -249,7 +249,7 @@ cat(paste0("<script>
 
     <div class="conclusion-card">
       <div class="conclusion-icon" style="background:#E1F5EE;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D85A30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="8" cy="8" r="3"/>
           <circle cx="16" cy="8" r="3"/>
           <path d="M2 20c0-3.3 3.1-6 7-6"/>
@@ -268,7 +268,7 @@ cat(paste0("<script>
 
     <div class="conclusion-card">
       <div class="conclusion-icon" style="background:#FAECE7;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D85A30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="7" r="3"/>
           <path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>
           <circle cx="5" cy="11" r="2.5"/>
