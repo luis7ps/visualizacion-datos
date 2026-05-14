@@ -7,7 +7,9 @@ website:
   navbar:
     left:
       - href: index.qmd
-        text: Home
+        text: Inicio
+      - href: https://luis7ps.github.io/visualizacion-datos/pec3.html
+        text: Volver
 
 format:
   html:
