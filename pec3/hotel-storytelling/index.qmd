@@ -25,6 +25,12 @@ x$arrival_date_month <- factor(
              "July","August","September","October","November","December"),
   ordered = TRUE
 )
+
+# Identificador AAAAMM ordenado cronológicamente
+x$AAAAMM <- paste0(
+  x$arrival_date_year,
+  sprintf("%02d", match(as.character(x$arrival_date_month), month.name))
+)
 ```
 
 ```{r export-data, include=FALSE}
@@ -47,9 +53,12 @@ g4 <- x |>
   mutate(prop = n / sum(n)) |>
   toJSON()
 
-g5 <- x |>
-  count(arrival_date_year, profile) |>
-  toJSON()
+# G5: evolución mensual continua AAAAMM (reemplaza evolución anual)
+aaaamm_data <- x |>
+  count(AAAAMM, profile) |>
+  arrange(AAAAMM)
+
+g5 <- aaaamm_data |> toJSON()
 
 g6 <- x |>
   count(arrival_date_month, profile) |>
@@ -77,7 +86,7 @@ cat(paste0("<script>
   const data_hotel    = ", g2, ";
   const data_adr      = ", g3, ";
   const data_cancel   = ", g4, ";
-  const data_year     = ", g5, ";
+  const data_aaaamm   = ", g5, ";
   const data_month    = ", g6, ";
   const data_lead     = ", g7, ";
   const data_special  = ", g8, ";
@@ -168,10 +177,11 @@ cat(paste0("<script>
 
     <div class="step" data-step="4">
       <span class="step-num">05</span>
-      <h3>¿Cómo evolucionan año a año?</h3>
-      <p>Las reservas de todos los perfiles siguen un patrón similar: de 2015 a 
-      2016 experimentan una subida y decaen de 2016 a 2017, aunque manteniéndose en
-      cifras superiores a las de 2015.</p>
+      <h3>¿Cómo evolucionan mes a mes?</h3>
+      <p>La serie mensual completa muestra cómo el volumen de 
+      reservas de cada perfil ha ido variando con el tiempo. Las reservas dobles
+      tienen el comportamiento más irregular, mientras que familias y grupos 
+      tienen tendencias similares.</p>
     </div>
 
     <div class="step" data-step="5">
@@ -252,7 +262,7 @@ cat(paste0("<script>
         <li>Tiene la mayor <strong>tasa de cancelación</strong> (40%) entre todos los perfiles.</li>
         <li>Planifican con <strong>más antelación</strong> que cualquier otro perfil.</li>
         <li>Prefieren los meses centrales del año (entre abril y octubre).</li>
-        <li>Es el perfil que experimenta una <strong>mayor crecida en 2016</strong>.</li>
+        <li>Es el perfil cuyo número de reservas varía más dependiendo del mes y el año de las mismas.</li>
       </ul>
     </div>
 
@@ -352,15 +362,15 @@ function drawChart(step) {
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
 
   const titles = [
-    ["Distribución de perfiles turísticos",     "Número total de reservas por perfil"],
-    ["Tipo de hotel según perfil",               "Proporción de City Hotel vs Resort Hotel"],
-    ["Precio medio diario (ADR)",                "Distribución del gasto por perfil"],
-    ["Tasa de cancelación",                      "Proporción de cancelaciones por perfil"],
-    ["Evolución anual de reservas",              "Número de reservas por año y perfil (2015–2017)"],
-    ["Estacionalidad mensual",                   "Número de reservas por mes y perfil"],
-    ["Antelación de la reserva",                 "Días de antelación por perfil"],
-    ["Peticiones especiales",                    "Número de peticiones especiales por perfil"],
-    ["Clientes repetidores",                     "Proporción de clientes que repiten por perfil"]
+    ["Distribución de perfiles turísticos",          "Número total de reservas por perfil"],
+    ["Tipo de hotel según perfil",                   "Proporción de City Hotel vs Resort Hotel"],
+    ["Precio medio diario (ADR)",                    "Distribución del gasto por perfil"],
+    ["Tasa de cancelación",                          "Proporción de cancelaciones por perfil"],
+    ["Evolución mensual de reservas",                "Número de reservas por mes y perfil (2015–2017)"],
+    ["Estacionalidad mensual",                       "Número de reservas por mes del año y perfil"],
+    ["Antelación de la reserva",                     "Días de antelación por perfil"],
+    ["Peticiones especiales",                        "Número de peticiones especiales por perfil"],
+    ["Clientes repetidores",                         "Proporción de clientes que repiten por perfil"]
   ];
 
   document.getElementById("chart-title").textContent    = titles[step][0];
@@ -370,13 +380,14 @@ function drawChart(step) {
   if (step === 1) drawHotelType(g, w, h);
   if (step === 2) drawBoxplot(g, w, h, data_adr,     "adr");
   if (step === 3) drawCancels(g, w, h);
-  if (step === 4) drawYear(g, w, h);
+  if (step === 4) drawYearMonth(g, w, h);
   if (step === 5) drawMonth(g, w, h);
   if (step === 6) drawBoxplot(g, w, h, data_lead,    "lead_time");
   if (step === 7) drawBoxplot(g, w, h, data_special, "total_of_special_requests");
   if (step === 8) drawRepeated(g, w, h);
 }
 
+// ── G1: barras de distribución ────────────────────────────
 function drawDist(g, w, h) {
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
   const y = d3.scaleLinear()
@@ -404,6 +415,7 @@ function drawDist(g, w, h) {
   g.append("g").call(d3.axisLeft(y).ticks(6).tickFormat(d3.format(",")));
 }
 
+// ── G2: barras apiladas hotel ─────────────────────────────
 function drawHotelType(g, w, h) {
   const hotels = ["City Hotel", "Resort Hotel"];
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
@@ -437,6 +449,7 @@ function drawHotelType(g, w, h) {
   g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
 }
 
+// ── Boxplot reutilizable ──────────────────────────────────
 function drawBoxplot(g, w, h, dataset, field) {
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
   const y = d3.scaleLinear()
@@ -484,55 +497,43 @@ function drawBoxplot(g, w, h, dataset, field) {
   g.append("g").call(d3.axisLeft(y).ticks(6));
 }
 
+// ── G4: cancelaciones ─────────────────────────────────────
 function drawCancels(g, w, h) {
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);
   const y = d3.scaleLinear().domain([0, 1]).range([h, 0]);
-  const cancelColor = d3.scaleOrdinal()
-    .domain(["no", "yes"])
-    .range(["#1D9E75", "#D85A30"]);
 
-  // Para cada perfil, calcular prop de cancelados y no cancelados
   const barData = profiles.map(profile => {
-    const rows = data_cancel.filter(r => String(r.profile) === profile);
+    const rows  = data_cancel.filter(r => String(r.profile) === profile);
     const total = d3.sum(rows, r => r.n);
-    const canceled = rows.find(r => Number(r.is_canceled) === 1);
+    const canceled    = rows.find(r => Number(r.is_canceled) === 1);
     const notCanceled = rows.find(r => Number(r.is_canceled) === 0);
     return {
       profile,
-      propNo: notCanceled ? notCanceled.n / total : 0,
-      propYes: canceled   ? canceled.n   / total : 0
+      propNo:  notCanceled ? notCanceled.n / total : 0,
+      propYes: canceled    ? canceled.n    / total : 0
     };
   });
 
-  // Dibujar segmento "No cancelada" (desde 0)
   g.selectAll(".bar-no").data(barData).join("rect")
     .attr("class", "bar-no")
-    .attr("x", d => x(d.profile))
-    .attr("width", x.bandwidth())
-    .attr("y", d => y(d.propNo))
-    .attr("height", d => h - y(d.propNo))
+    .attr("x", d => x(d.profile)).attr("width", x.bandwidth())
+    .attr("y", d => y(d.propNo)).attr("height", d => h - y(d.propNo))
     .attr("fill", "#1D9E75");
 
-  // Dibujar segmento "Cancelada" (apilado encima)
   g.selectAll(".bar-yes").data(barData).join("rect")
     .attr("class", "bar-yes")
-    .attr("x", d => x(d.profile))
-    .attr("width", x.bandwidth())
-    .attr("y", d => y(1))
-    .attr("height", d => y(d.propNo) - y(1))
+    .attr("x", d => x(d.profile)).attr("width", x.bandwidth())
+    .attr("y", d => y(1)).attr("height", d => y(d.propNo) - y(1))
     .attr("fill", "#D85A30");
 
-  // Etiqueta de % cancelación encima de cada barra
   g.selectAll(".pct-label").data(barData).join("text")
     .attr("class", "pct-label")
     .attr("x", d => x(d.profile) + x.bandwidth() / 2)
     .attr("y", d => y(1) - 6)
     .attr("text-anchor", "middle")
-    .attr("font-size", "12px")
-    .attr("fill", "#D85A30")
+    .attr("font-size", "12px").attr("fill", "#D85A30")
     .text(d => d3.format(".1%")(d.propYes));
 
-  // Leyenda
   [["#1D9E75", "No cancelada"], ["#D85A30", "Cancelada"]].forEach(([col, lbl], i) => {
     g.append("rect").attr("x", i * 150).attr("y", -24)
       .attr("width", 12).attr("height", 12).attr("fill", col).attr("rx", 2);
@@ -544,60 +545,109 @@ function drawCancels(g, w, h) {
   g.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
 }
 
-function drawYear(g, w, h) {
-  const years = [2015, 2016, 2017];
-  const x = d3.scalePoint().domain(years).range([0, w]).padding(0.3);
+// ── G5: evolución AAAAMM — líneas continuas ───────────────
+function drawYearMonth(g, w, h) {
+  // Obtener periodos ordenados cronológicamente
+  const periods = [...new Set(data_aaaamm.map(d => d.AAAAMM))].sort();
+
+  const x = d3.scalePoint().domain(periods).range([0, w]).padding(0.2);
   const y = d3.scaleLinear()
-    .domain([0, d3.max(data_year, d => d.n) * 1.1])
+    .domain([0, d3.max(data_aaaamm, d => d.n) * 1.1])
     .range([h, 0]);
 
   const line = d3.line()
-    .x(d => x(d.arrival_date_year))
-    .y(d => y(d.n));
+    .x(d => x(d.AAAAMM))
+    .y(d => y(d.n))
+    .defined(d => d.n != null);
 
   profiles.forEach(profile => {
-    const pdata = data_year.filter(d => d.profile === profile)
-      .sort((a, b) => a.arrival_date_year - b.arrival_date_year);
+    const pdata = data_aaaamm
+      .filter(d => d.profile === profile)
+      .sort((a, b) => a.AAAAMM.localeCompare(b.AAAAMM));
 
+    // Línea
     g.append("path").datum(pdata)
       .attr("fill", "none")
       .attr("stroke", color(profile))
-      .attr("stroke-width", 2.5)
+      .attr("stroke-width", 2)
       .attr("d", line);
 
+    // Puntos
     g.selectAll(`.dot-${profile}`).data(pdata).join("circle")
-      .attr("cx", d => x(d.arrival_date_year))
+      .attr("cx", d => x(d.AAAAMM))
       .attr("cy", d => y(d.n))
-      .attr("r", 5)
+      .attr("r", 3)
       .attr("fill", color(profile));
-
-    g.selectAll(`.lbl-${profile}`).data(pdata).join("text")
-      .attr("x", d => x(d.arrival_date_year))
-      .attr("y", d => y(d.n) - 10)
-      .attr("text-anchor", "middle")
-      .attr("font-size", "11px")
-      .attr("fill", color(profile))
-      .text(d => d3.format(",")(d.n));
   });
 
+  // Leyenda
   profiles.forEach((p, i) => {
-    g.append("line").attr("x1", i * 100).attr("x2", i * 100 + 16)
+    g.append("line")
+      .attr("x1", i * 110).attr("x2", i * 110 + 16)
       .attr("y1", -18).attr("y2", -18)
       .attr("stroke", color(p)).attr("stroke-width", 2.5);
-    g.append("text").attr("x", i * 100 + 20).attr("y", -14)
+    g.append("text").attr("x", i * 110 + 20).attr("y", -14)
       .attr("font-size", "12px").attr("fill", "#555").text(p);
   });
 
-  g.append("g").call(d3.axisBottom(x).tickFormat(d3.format("d")))
-    .attr("transform", `translate(0,${h})`);
+  // Separadores visuales de año
+  ["201601", "201701"].forEach(sep => {
+    if (periods.includes(sep)) {
+      g.append("line")
+        .attr("x1", x(sep)).attr("x2", x(sep))
+        .attr("y1", 0).attr("y2", h)
+        .attr("stroke", "#ccc")
+        .attr("stroke-dasharray", "4,3")
+        .attr("stroke-width", 1);
+    }
+  });
+
+  // Etiquetas de año centradas
+  [["2015", periods.filter(p => p.startsWith("2015"))],
+   ["2016", periods.filter(p => p.startsWith("2016"))],
+   ["2017", periods.filter(p => p.startsWith("2017"))]
+  ].forEach(([yr, ps]) => {
+    if (!ps.length) return;
+    const midPeriod = ps[Math.floor(ps.length / 2)];
+    g.append("text")
+      .attr("x", x(midPeriod))
+      .attr("y", h + 50)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "12px")
+      .attr("font-weight", "600")
+      .attr("fill", "#888")
+      .text(yr);
+  });
+
+  // Eje X: mostrar solo Jan de cada año como referencia
+  const tickPeriods = periods.filter(p => p.endsWith("01") || p.endsWith("07"));
+  const tickFormat  = p => {
+    const yr = p.slice(0, 4);
+    const mo = parseInt(p.slice(4), 10);
+    const names = ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    return names[mo];
+  };
+
+  g.append("g")
+    .call(
+      d3.axisBottom(x)
+        .tickValues(tickPeriods)
+        .tickFormat(tickFormat)
+    )
+    .attr("transform", `translate(0,${h})`)
+    .selectAll("text")
+    .attr("transform", "rotate(-35)")
+    .attr("text-anchor", "end");
+
   g.append("g").call(d3.axisLeft(y).ticks(6).tickFormat(d3.format(",")));
 }
 
+// ── G6: estacionalidad mensual (líneas) ───────────────────
 function drawMonth(g, w, h) {
   const months = ["January","February","March","April","May","June",
                   "July","August","September","October","November","December"];
-  const shortM  = ["Jan","Feb","Mar","Apr","May","Jun",
-                   "Jul","Aug","Sep","Oct","Nov","Dec"];
+  const shortM  = ["Ene","Feb","Mar","Abr","May","Jun",
+                   "Jul","Ago","Sep","Oct","Nov","Dic"];
 
   const x = d3.scalePoint().domain(months).range([0, w]).padding(0.2);
   const y = d3.scaleLinear()
@@ -613,21 +663,21 @@ function drawMonth(g, w, h) {
     g.append("path").datum(pdata)
       .attr("fill", "none")
       .attr("stroke", color(profile))
-      .attr("stroke-width", 2.5)
+      .attr("stroke-width", 2)
       .attr("d", line);
 
     g.selectAll(`.dot-${profile}`).data(pdata).join("circle")
       .attr("cx", d => x(d.arrival_date_month))
       .attr("cy", d => y(d.n))
-      .attr("r", 4)
+      .attr("r", 3.5)
       .attr("fill", color(profile));
   });
 
   profiles.forEach((p, i) => {
-    g.append("line").attr("x1", i * 100).attr("x2", i * 100 + 16)
+    g.append("line").attr("x1", i * 110).attr("x2", i * 110 + 16)
       .attr("y1", -18).attr("y2", -18)
       .attr("stroke", color(p)).attr("stroke-width", 2.5);
-    g.append("text").attr("x", i * 100 + 20).attr("y", -14)
+    g.append("text").attr("x", i * 110 + 20).attr("y", -14)
       .attr("font-size", "12px").attr("fill", "#555").text(p);
   });
 
@@ -638,6 +688,7 @@ function drawMonth(g, w, h) {
   g.append("g").call(d3.axisLeft(y).ticks(6).tickFormat(d3.format(",")));
 }
 
+// ── G9: clientes repetidores ──────────────────────────────
 function drawRepeated(g, w, h) {
   const repColor = d3.scaleOrdinal().domain(["No","Sí"]).range(["#B4B2A9","#185FA5"]);
   const x = d3.scaleBand().domain(profiles).range([0, w]).padding(0.3);

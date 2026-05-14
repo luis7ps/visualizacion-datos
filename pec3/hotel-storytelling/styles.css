@@ -40,8 +40,8 @@
 }
 
 .badge-single { background: #E6F1FB; color: #0C447C; }
-.badge-couple { background: #E1F5EE; color: #085041; }
-.badge-family { background: #FAECE7; color: #712B13; }
+.badge-couple { background: #FAECE7; color: #712B13; }
+.badge-family { background: #E1F5EE; color: #085041; }
 .badge-group  { background: #FAEEDA; color: #633806; }
 
 /* ── Scrollytelling ──────────────────────── */
