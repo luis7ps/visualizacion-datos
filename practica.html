@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Práctica: CEE Aragón</title>
+  <link rel="icon" href="img/visicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green-dark:  #1b5e20;
+      --green:       #388e3c;
+      --yellow:      #f9a825;
+      --orange:      #e65100;
+      --red:         #b71c1c;
+      --ink:         #1a1a2e;
+      --ink-light:   #3d3d5c;
+      --paper:       #faf8f4;
+      --card-bg:     #ffffff;
+      --border:      #e8e4dc;
+      --accent:      #1b5e20;
+    }
+
+    body {
+      font-family: 'Source Sans 3', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.7;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1b12 0%, #1b3a22 50%, #0d1b12 100%);
+      color: #fff;
+      padding: 80px 24px 64px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(56,142,60,0.25) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-eyebrow {
+      font-family: 'Source Sans 3', sans-serif;
+      font-weight: 600;
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #81c784;
+      margin-bottom: 18px;
+    }
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.15;
+      max-width: 760px;
+      margin: 0 auto 20px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: #a5d6a7;
+    }
+    .hero-sub {
+      font-size: 1.05rem;
+      color: #c8e6c9;
+      max-width: 600px;
+      margin: 0 auto 36px;
+      font-weight: 300;
+    }
+    .hero-meta {
+      display: inline-flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      justify-content: center;
+      font-size: 0.82rem;
+      color: #aed581;
+      font-weight: 400;
+    }
+    .hero-meta span::before { content: '◆ '; }
+
+    /* ── Navigation strip ── */
+    .nav-strip {
+      background: var(--ink);
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-strip a {
+      color: #b0bec5;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 13px 22px;
+      border-bottom: 3px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .nav-strip a:hover { color: #a5d6a7; border-bottom-color: #388e3c; }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card-bg);
+      padding: 36px 40px;
+      margin-top: 28px;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px var(--border);
+    }
+
+    h1, h2, h3 { color: #2c3e50; }
+    h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      margin-bottom: 14px;
+    }
+    h3 {
+      font-family: 'Source Sans 3', sans-serif;
+      font-weight: 600;
+      font-size: 1.05rem;
+      margin-bottom: 8px;
+      color: var(--ink-light);
+    }
+    p { margin-bottom: 14px; color: #3a3a4a; }
+    p:last-child { margin-bottom: 0; }
+    a { color: #2e7d32; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Section labels ── */
+    .section-label {
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    /* ── Question banner ── */
+    .question-banner {
+      background: var(--ink);
+      color: #fff;
+      border-radius: 4px;
+      padding: 28px 36px;
+      margin-top: 40px;
+      margin-bottom: 8px;
+      border-left: 6px solid var(--green);
+    }
+    .question-banner .question-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #81c784;
+      margin-bottom: 10px;
+    }
+    .question-banner h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.45rem;
+      color: #fff;
+      margin-bottom: 0;
+    }
+
+    /* ── Timeline / milestones ── */
+    .timeline {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 24px 0 8px;
+    }
+    .milestone {
+      flex: 1;
+      min-width: 140px;
+      border-radius: 4px;
+      padding: 18px 20px;
+      border-top: 4px solid;
+      background: #f5f5f5;
+    }
+    .milestone.m2030 { border-color: #FFEB3B; }
+    .milestone.m2033 { border-color: #CDDC39; }
+    .milestone.m2050 { border-color: #008000; }
+    .milestone-year {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .milestone-body { font-size: 0.88rem; color: #555; margin-top: 8px; }
+    .milestone-badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: #FFEB3B;
+      color: #fff;
+    }
+    .milestone.m2033 .milestone-badge { background: #CDDC39; }
+    .milestone.m2050 .milestone-badge { background: #008000; }
+
+    /* ── Stat pills ── */
+    .stat-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .stat-pill {
+      flex: 1;
+      min-width: 120px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      padding: 16px 18px;
+      text-align: center;
+    }
+    .stat-pill .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .stat-pill .stat-label {
+      font-size: 0.78rem;
+      color: #777;
+      margin-top: 6px;
+    }
+
+    /* ── Viz block ── */
+    .viz-block {
+      margin-top: 28px;
+    }
+    .viz-block img {
+      width: 100%;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      display: block;
+    }
+    .viz-caption {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 10px;
+      padding: 0 4px;
+      border-left: 3px solid #ddd;
+      padding-left: 12px;
+    }
+
+    /* ── Key finding box ── */
+    .finding {
+      background: #e8f5e9;
+      border-left: 4px solid var(--green);
+      border-radius: 0 4px 4px 0;
+      padding: 16px 20px;
+      margin: 20px 0 0;
+      font-size: 0.92rem;
+      color: #1b4d1e;
+    }
+    .finding strong { color: var(--green-dark); }
+    .finding.warn {
+      background: #fff3e0;
+      border-color: var(--orange);
+      color: #7b3200;
+    }
+    .finding.warn strong { color: var(--orange); }
+
+    /* ── Tableau embed ── */
+    .tableau-wrap {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 20px;
+    background: #f9f9f9;
+    /* elimina display:flex, min-height, align-items y justify-content */
+    }
+    .tableau-placeholder {
+      text-align: center;
+      color: #888;
+      padding: 48px;
+    }
+    .tableau-placeholder .icon { font-size: 3rem; margin-bottom: 12px; }
+    .tableau-placeholder p { font-size: 0.9rem; }
+    .tableau-placeholder code {
+      display: block;
+      margin-top: 12px;
+      background: #eee;
+      border-radius: 4px;
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      color: #444;
+      word-break: break-all;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 60px;
+      padding: 32px 0 48px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: #999;
+      border-top: 1px solid var(--border);
+    }
+    .footer a { color: #666; }
+
+    /* ── Source link chip ── */
+    .source-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      color: #444;
+      margin-top: 8px;
+      text-decoration: none;
+    }
+    .source-chip:hover { background: #e8e8e8; text-decoration: none; }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 32px 0;
+    }
+
+    /* ── Color scale legend ── */
+    .scale-legend {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 12px 0 4px;
+    }
+    .scale-swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .scale-swatch span {
+      width: 32px;
+      height: 18px;
+      border-radius: 2px;
+      display: block;
+    }
+    .scale-swatch label { font-size: 0.7rem; font-weight: 700; color: #555; }
+
+    /* ── Back link ── */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: #666;
+      text-decoration: none;
+      margin-bottom: 4px;
+    }
+    .back-link:hover { color: #333; text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-eyebrow">M2.859 · Visualización de Datos · UOC · 2025-2</div>
+  <h1><br><em>¿Está preparado Aragón para los retos energéticos propuestos por la UE?</br></em></h1>
+  <p class="hero-sub">Un análisis visual del parque inmobiliario aragonés ante los objetivos de eficiencia energética de la UE para 2030 y 2033.</p>
+  <div class="hero-meta">
+    <span>188.254 certificados energéticos</span>
+    <span>609 municipios analizados</span>
+    <span>Datos abiertos del Gobierno de Aragón</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ NAV -->
+<nav class="nav-strip">
+  <a href="#contexto">Contexto</a>
+  <a href="#pregunta1">Análisis autonómico</a>
+  <a href="#pregunta2">Análisis municipal</a>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════ BODY -->
+<div class="container">
+
+  <!-- ── CONTEXTO ── -->
+  <section id="contexto">
+    <div class="card">
+      <div class="section-label">Contexto</div>
+      <h2>Europa marca el calendario de la rehabilitación energética</h2>
+      <p>
+        La Unión Europea ha establecido un calendario progresivo de exigencias de eficiencia energética para los edificios residenciales. El objetivo final es lograr un parque inmobiliario prácticamente descarbonizado en 2050, pero el camino pasa por dos hitos intermedios que afectarán a millones de propietarios en toda España.
+      </p>
+
+      <div class="timeline">
+        <div class="milestone m2030">
+          <div class="milestone-year">2030</div>
+          <div class="milestone-body">Las viviendas deberán alcanzar como mínimo la calificación energética <strong>E</strong>. Se requerirán mejoras en aislamiento, ventanas y climatización en los inmuebles con peor rendimiento.</div>
+          <span class="milestone-badge">Mínimo: E</span>
+        </div>
+        <div class="milestone m2033">
+          <div class="milestone-year">2033</div>
+          <div class="milestone-body">El listón sube a la letra <strong>D</strong>. Los edificios que no alcancen este umbral quedarán en riesgo de perder valor de mercado y atractivo para compradores e inquilinos.</div>
+          <span class="milestone-badge">Mínimo: D</span>
+        </div>
+        <div class="milestone m2050">
+          <div class="milestone-year">2050</div>
+          <div class="milestone-body">Meta final: un parque inmobiliario europeo con emisiones prácticamente nulas. La transición energética de los edificios es pieza clave de la estrategia climática de la UE.</div>
+          <span class="milestone-badge">Emisiones nulas</span>
+        </div>
+      </div>
+
+      <p style="margin-top:20px;">
+        Esta visualización analiza si el parque inmobiliario aragonés está en condiciones de cumplir esos objetivos, utilizando los datos del <strong>Registro de Certificación de Eficiencia Energética de Edificios de Aragón</strong>, publicados por la Dirección General de Energía y Minas del Gobierno de Aragón bajo licencia <em>Creative Commons Attribution 4.0</em>.
+      </p>
+
+      <div style="margin-top:12px;">
+        <a class="source-chip" href="https://opendata.aragon.es/datos/catalogo/dataset/registro-de-certificacion-de-eficiencia-energetica-de-edificios-de-aragon" target="_blank">
+          🗂️ Fuente de datos: opendata.aragon.es
+        </a>
+        &nbsp;
+        <a class="source-chip" href="https://www.larazon.es/sociedad/aviso-millones-propietarios-espana-cambio-que-tendran-que-hacer-sus-viviendas-antes-2030_2026031369b3f0ed6cf703292f6f2d3d.html" target="_blank">
+          📰 Motivación: "Aviso a millones de propietarios en España" (La Razón)
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ Análisis autonómico -->
+  <section id="pregunta1">
+    <div class="question-banner">
+      <div class="question-num">Análisis autonómico</div>
+      <h2>¿Está preparado el parque residencial aragonés para alcanzar los objetivos europeos de reducción del consumo energético establecidos para 2030 y 2033?</h2>
+    </div>
+
+    <div class="card">
+      <p>
+        Antes de responder con datos, conviene entender el sistema de calificación energética. Cada edificio recibe una letra de la <strong>A</strong> (máxima eficiencia) a la <strong>G</strong> (mínima eficiencia), tanto en consumo de energía (kWh/m² año) como en emisiones de CO₂ (kgCO₂/m² año). Para cumplir el objetivo de 2030, un edificio debe estar, como mínimo, en la letra <strong>E</strong>; para 2033, en la <strong>D</strong>.
+      </p>
+
+      <div class="scale-legend">
+        <div class="scale-swatch"><span style="background:#008000"></span><label>A</label></div>
+        <div class="scale-swatch"><span style="background:#4CAF50"></span><label>B</label></div>
+        <div class="scale-swatch"><span style="background:#8BC34A"></span><label>C</label></div>
+        <div class="scale-swatch"><span style="background:#CDDC39"></span><label>D</label></div>
+        <div class="scale-swatch"><span style="background:#FFEB3B"></span><label>E</label></div>
+        <div class="scale-swatch"><span style="background:#FF9800"></span><label>F</label></div>
+        <div class="scale-swatch"><span style="background:#F44336"></span><label>G</label></div>
+        <span style="font-size:0.78rem;color:#888;margin-left:8px;">Escala de calificación energética (A = mejor, G = peor)</span>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Viz 1 -->
+      <div class="viz-block">
+        <h3>1. Distribución global de certificados por clasificación de consumo</h3>
+        <img src="practica/img/countplot_consumo.png" alt="Número de certificados por clasificación de consumo energético" loading="lazy">
+        <p class="viz-caption">
+          Número de certificados energéticos emitidos en Aragón, agrupados por calificación de consumo (A-G). Generado a partir del conjunto de datos transformado tras la limpieza (176.281 certificados).
+        </p>
+        <div class="finding warn">
+          <strong>Dato clave:</strong> Se tienen casi 100.000 certificados con clasificación <strong>E</strong>, etiqueta más abundante seguida de lejos por <strong>G</strong>, con algo más de 20.000 certificados. Por otro lado, las etiquetas menos frecuentes son la <strong>A</strong> y la <strong>B</strong>, con menos de 4.000 certificados cada una.
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Viz 2 -->
+      <div class="viz-block">
+        <h3>2. ¿Cuánto pesa cada calificación en el total? Vista proporcional</h3>
+        <img src="practica/img/pie_consumo.png" alt="Porcentaje de certificados por clasificación de consumo energético" loading="lazy">
+        <p class="viz-caption">
+          Distribución porcentual de los certificados por calificación de consumo energético. Cada sector representa la fracción del parque inmobiliario aragonés en esa letra.
+        </p>
+        <div class="finding">
+          <strong>Visión respecto a los objetivos de la UE:</strong> La calificación <strong>E</strong> aglutina más del 56% de todos los certificados emitidos. Si sumamos F y G, más del <strong>24% de los edificios ya incumplirían</strong> el objetivo mínimo de 2030 hoy mismo. Y si el umbral pasa a D en 2033, el porcentaje en riesgo supera el <strong>80%</strong>.
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Viz 3 -->
+      <div class="viz-block">
+        <h3>3. ¿Varía la situación según la provincia?</h3>
+        <img src="practica/img/bar_consumo_provincia_pct.png" alt="Distribución porcentual de clasificaciones energéticas por provincia" loading="lazy">
+        <p class="viz-caption">
+          Barras apiladas al 100% que muestran el reparto de calificaciones de consumo energético en cada una de las tres provincias aragonesas. Permite comparar su perfil energético relativo.
+        </p>
+        <div class="finding">
+          <strong>Diferencias entre provincias:</strong> Teruel destaca con el mayor porcentaje de edificios en calificaciones A-D (<strong>25,7%</strong>), aunque también tiene el mayor porcentaje en G (14,6%). Huesca y Zaragoza presentan perfiles similares entre sí. En las tres provincias, la letra E es dominante, y el porcentaje de F+G ronda el 23-26%, por lo que en conclusión <strong>no se obtienen diferencias estadísticamente llamativas</strong>.
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Viz 4 -->
+      <div class="viz-block">
+        <h3>4. ¿Los edificios más antiguos son los menos eficientes?</h3>
+        <img src="practica/img/boxplot_anio_consumo.png" alt="Año de construcción según clasificación energética" loading="lazy">
+        <p class="viz-caption">
+          Diagrama de caja que relaciona el año de construcción con la calificación de consumo energético. La mediana de cada caja indica el año de construcción típico de los edificios con esa calificación.
+        </p>
+        <div class="finding">
+          <strong>La antigüedad importa:</strong> Los edificios calificados con A tienen una mediana de construcción en torno a 2014, mientras que los de F y G la tienen cerca de 1970. 
+          A pesar de contar con mucha dispersión, la correlación es clara: el reto de eficiencia energética al que se enfrenta el parque inmobiliario aragonés tiene mucho que ver con su <a href="https://www.eleconomista.es/vivienda-inmobiliario/noticias/13058277/10/24/el-parque-de-vivienda-en-aragon-esta-envejecido.html" target="_blank">envejecimiento</a>.
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ Análisis municipal -->
+  <section id="pregunta2">
+    <div class="question-banner">
+      <div class="question-num">Análisis municipal</div>
+      <h2>¿Sobre qué municipios sería más prioritario impulsar planes de rehabilitación energética?</h2>
+    </div>
+
+    <div class="card">
+      <p>
+        La perspectiva territorial permite identificar dónde se concentra el problema con mayor intensidad. A partir del conjunto de datos transformado agregado por municipio (609 municipios), se han construido dos vistas en Tableau Public que colorean cada municipio según el porcentaje de edificios que <strong>no alcanzarían el umbral exigido</strong> en cada horizonte temporal.
+      </p>
+      <p>
+        Pasa el cursor sobre cualquier municipio para ver su perfil detallado: número de certificados, antigüedad media del parque y la distribución completa de calificaciones.
+      </p>
+
+      <hr class="divider">
+
+      <h3>Vista 1 — Objetivo 2030: municipios con mayor porcentaje de edificios en F o G</h3>
+      <p style="font-size:0.9rem;color:#555;">
+        Se considera en riesgo para 2030 cualquier municipio cuya suma de edificios calificados con F o G supere un umbral significativo. Los municipios con tonos más rojizos requieren intervención prioritaria.
+      </p>
+
+      <!-- TABLEAU EMBED 1-->
+      <div class="tableau-wrap">
+          <div class='tableauPlaceholder' id='viz1780254897838' style='position: relative'><noscript><a href='#'><img alt='Consumo2030 ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;CE&#47;CEEMunicipiosAragn&#47;Consumo&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz'  style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' /> <param name='embed_code_version' value='3' /> <param name='site_root' value='' /><param name='name' value='CEEMunicipiosAragn&#47;Consumo' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;CE&#47;CEEMunicipiosAragn&#47;Consumo&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /><param name='language' value='es-ES' /></object></div>                <script type='text/javascript'>                    var divElement = document.getElementById('viz1780254897838');                    var vizElement = divElement.getElementsByTagName('object')[0];                    vizElement.style.width='100%';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';                    var scriptElement = document.createElement('script');                    scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';                    vizElement.parentNode.insertBefore(scriptElement, vizElement);                </script>
+      </div>
+
+      <hr class="divider">
+
+      <h3>Vista 2 — Objetivo 2033: municipios con mayor porcentaje de edificios en E, F o G</h3>
+      <p style="font-size:0.9rem;color:#555;">
+        Para 2033 el umbral mínimo sube a D, por lo que también los edificios actualmente en E (el grupo mayoritario, ~56%) pasan a considerarse en riesgo si no se rehabilitan. Esta vista revela la dimensión real del desafío a medio plazo.
+      </p>
+
+      <!-- TABLEAU EMBED 2 -->
+      <div class="tableau-wrap">
+          <div class='tableauPlaceholder' id='viz1780255029918' style='position: relative'><noscript><a href='#'><img alt='Consumo2033 ' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;CE&#47;CEEMunicipiosAragn&#47;Consumo2033&#47;1_rss.png' style='border: none' /></a></noscript><object class='tableauViz'  style='display:none;'><param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' /> <param name='embed_code_version' value='3' /> <param name='site_root' value='' /><param name='name' value='CEEMunicipiosAragn&#47;Consumo2033' /><param name='tabs' value='no' /><param name='toolbar' value='yes' /><param name='static_image' value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;CE&#47;CEEMunicipiosAragn&#47;Consumo2033&#47;1.png' /> <param name='animate_transition' value='yes' /><param name='display_static_image' value='yes' /><param name='display_spinner' value='yes' /><param name='display_overlay' value='yes' /><param name='display_count' value='yes' /><param name='language' value='es-ES' /></object></div>                <script type='text/javascript'>                    var divElement = document.getElementById('viz1780255029918');                    var vizElement = divElement.getElementsByTagName('object')[0];                    vizElement.style.width='100%';vizElement.style.height=(divElement.offsetWidth*0.75)+'px';                    var scriptElement = document.createElement('script');                    scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js';                    vizElement.parentNode.insertBefore(scriptElement, vizElement);                </script>
+      </div>
+
+      <div class="finding" style="margin-top:24px;">
+        <strong>Interpretación del mapa:</strong> Los municipios coloreados con tonos más rojizos son aquellos con un mayor porcentaje de edificios en riesgo de incumplir los objetivos de eficiencia energética. Estos municipios deberían ser prioritarios para la implementación de planes de rehabilitación energética, ya que enfrentan un desafío más urgente para alcanzar las metas establecidas por la UE. Cumplir con el objetivo de 2030 es más factible, como se puede observar en la primera vista, pero el reto de 2033 es mucho más ambicioso y requerirá un esfuerzo significativo en la mayoría de los municipios aragoneses.
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BACK LINK ── -->
+  <div style="margin-top:32px;">
+    <a class="back-link" href="index.html">← Volver al inicio</a>
+  </div>
+
+</div><!-- /container -->
+
+<!-- ══════════════════════════════════════════════════════════ FOOTER -->
+<div class="footer container">
+  <p>Datos: <a href="https://opendata.aragon.es/datos/catalogo/dataset/registro-de-certificacion-de-eficiencia-energetica-de-edificios-de-aragon" target="_blank">Gobierno de Aragón - opendata.aragon.es</a> · Licencia CC BY 4.0</p>
+  <p style="margin-top:6px;">Asignatura M2.859 - Visualización de Datos · Máster en Ciencia de Datos · UOC · 2025-2</p>
+</div>
+
+</body>
+</html>
